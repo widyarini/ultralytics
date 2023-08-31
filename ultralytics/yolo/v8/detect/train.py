@@ -1,4 +1,4 @@
-# Ultralytics YOLO 🚀, AGPL-3.0 license
+# Ultralytics YOLO 🚀, AGPL-3.0 license # Updated
 from copy import copy
 
 import numpy as np
@@ -113,10 +113,13 @@ def train(cfg=DEFAULT_CFG, use_python=False):
     args = dict(model=model, data=data, device=device)
     if use_python:
         from ultralytics import YOLO
-        YOLO(model).train(**args)
+        trainer = YOLO(model)
+        trainer.train(**args)
     else:
         trainer = DetectionTrainer(overrides=args)
         trainer.train()
+
+    return trainer
 
 
 if __name__ == '__main__':

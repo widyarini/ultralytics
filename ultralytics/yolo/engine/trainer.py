@@ -1,4 +1,4 @@
-# Ultralytics YOLO 🚀, AGPL-3.0 license
+# Ultralytics YOLO 🚀, AGPL-3.0 license # Updated
 """
 Train a model on a dataset
 
@@ -85,6 +85,7 @@ class BaseTrainer:
         self.validator = None
         self.model = None
         self.metrics = None
+        self.best_metrics = None
         self.plots = {}
         init_seeds(self.args.seed + 1 + RANK, deterministic=self.args.deterministic)
 
@@ -345,6 +346,8 @@ class BaseTrainer:
 
                 # Log
                 mem = f'{torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0:.3g}G'  # (GB)
+                if torch.backends.mps.is_available():
+                    mem = f'{torch.mps.current_allocated_memory() / 1E9:.3f}G'  # (GB)
                 loss_len = self.tloss.shape[0] if len(self.tloss.size()) else 1
                 losses = self.tloss if loss_len > 1 else torch.unsqueeze(self.tloss, 0)
                 if RANK in (-1, 0):
@@ -371,6 +374,11 @@ class BaseTrainer:
                 if self.args.val or final_epoch:
                     self.metrics, self.fitness = self.validate()
                 self.save_metrics(metrics={**self.label_loss_items(self.tloss), **self.metrics, **self.lr})
+                print()
+                print({**self.label_loss_items(self.tloss)})
+                print({**self.metrics})
+                print({**self.lr})
+                print()
                 self.stop = self.stopper(epoch + 1, self.fitness)
 
                 # Save model
@@ -479,6 +487,7 @@ class BaseTrainer:
         fitness = metrics.pop('fitness', -self.loss.detach().cpu().numpy())  # use loss as fitness measure if not found
         if not self.best_fitness or self.best_fitness < fitness:
             self.best_fitness = fitness
+            self.best_metrics = metrics
         return metrics, fitness
 
     def get_model(self, cfg=None, weights=None, verbose=True):
@@ -531,6 +540,7 @@ class BaseTrainer:
 
     def save_metrics(self, metrics):
         """Saves training metrics to a CSV file."""
+        print(metrics)
         keys, vals = list(metrics.keys()), list(metrics.values())
         n = len(metrics) + 1  # number of cols
         s = '' if self.csv.exists() else (('%23s,' * n % tuple(['epoch'] + keys)).rstrip(',') + '\n')  # header

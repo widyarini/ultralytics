@@ -8,6 +8,7 @@ def run_ray_tune(model,
                  grace_period: int = 10,
                  gpu_per_trial: int = None,
                  max_samples: int = 10,
+                 max_concurrent_trials: int = None,
                  **train_args):
     """
     Runs hyperparameter tuning using Ray Tune.
@@ -80,6 +81,22 @@ def run_ray_tune(model,
         """
         model._reset_callbacks()
         config.update(train_args)
+        
+        # one gpu only for now
+        gpu_ids_=train_args['device'].split(':')[1].split(',') # expects train_args['device'] to be 'cuda:0' or 'cuda:0,1' for example
+
+        if len(gpu_ids_)==1:
+            gpu_id_available=gpu_ids_[0]
+        # elif len(gpu_ids_)==2:
+        #     first_id=int(gpu_ids_[0])
+        #     last_id=int(gpu_ids_[1])
+        #     gpu_id_available=[str(i) for i in range(first_id,last_id+1)]
+
+        tune.utils.wait_for_gpu(
+            # gpu_id=gpu_id_available,
+            retry=20,
+            delay_s=900
+        )
         model.train(**config)
 
     # Get search space
@@ -105,12 +122,16 @@ def run_ray_tune(model,
                                    reduction_factor=3)
 
     # Define the callbacks for the hyperparameter search
-    tuner_callbacks = [WandbLoggerCallback(project='YOLOv8-tune')] if wandb else []
+    if 'project' in train_args:
+        project_name = train_args.get('project')
+    else:
+        project_name = 'YOLOv8-tune'
+    tuner_callbacks = [WandbLoggerCallback(project=project_name)] if wandb else []
 
     # Create the Ray Tune hyperparameter search tuner
     tuner = tune.Tuner(trainable_with_resources,
                        param_space=space,
-                       tune_config=tune.TuneConfig(scheduler=asha_scheduler, num_samples=max_samples),
+                       tune_config=tune.TuneConfig(scheduler=asha_scheduler, num_samples=max_samples, max_concurrent_trials=max_concurrent_trials),
                        run_config=RunConfig(callbacks=tuner_callbacks, storage_path='./runs/tune'))
 
     # Run the hyperparameter search
