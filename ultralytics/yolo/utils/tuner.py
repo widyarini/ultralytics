@@ -83,10 +83,10 @@ def run_ray_tune(model,
         config.update(train_args)
         
         # one gpu only for now
-        gpu_ids_=train_args['device'].split(':')[1].split(',') # expects train_args['device'] to be 'cuda:0' or 'cuda:0,1' for example
+        # gpu_ids_=train_args['device'].split(':')[1].split(',') # expects train_args['device'] to be 'cuda:0' or 'cuda:0,1' for example
 
-        if len(gpu_ids_)==1:
-            gpu_id_available=gpu_ids_[0]
+        # if len(gpu_ids_)==1:
+        #     gpu_id_available=gpu_ids_[0]
         # elif len(gpu_ids_)==2:
         #     first_id=int(gpu_ids_[0])
         #     last_id=int(gpu_ids_[1])
