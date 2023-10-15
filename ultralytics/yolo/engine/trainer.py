@@ -347,9 +347,9 @@ class BaseTrainer:
                 # Log
                 mem = f'{torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0:.3g}G'  # (GB)
 
-                if torch.__version__ >= '1.12.0':
-                    if torch.backends.mps.is_available():
-                        mem = f'{torch.mps.current_allocated_memory() / 1E9:.3f}G'  # (GB)
+                # if torch.__version__ >= '1.12.0':
+                #     if torch.backends.mps.is_available():
+                #         mem = f'{torch.mps.current_allocated_memory() / 1E9:.3f}G'  # (GB)
 
                 loss_len = self.tloss.shape[0] if len(self.tloss.size()) else 1
                 losses = self.tloss if loss_len > 1 else torch.unsqueeze(self.tloss, 0)
