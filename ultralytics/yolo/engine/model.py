@@ -304,7 +304,7 @@ class YOLO:
         validator(model=self.model)
         self.metrics = validator.metrics
 
-        return validator.metrics
+        return validator.metrics, validator
 
     @smart_inference_mode()
     def benchmark(self, **kwargs):
